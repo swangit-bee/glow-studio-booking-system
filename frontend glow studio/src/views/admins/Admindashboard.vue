@@ -100,10 +100,16 @@ const loading = ref(true)
 
 const loadDashboardData = async () => {
   try {
+    const API_URL = import.meta.env.VITE_API_URL
+
     const [classesResponse, bookingsResponse] = await Promise.all([
-      fetch('http://localhost:5000/api/classes'),
-      fetch('http://localhost:5000/api/bookings'),
+      fetch(`${API_URL}/api/classes`),
+      fetch(`${API_URL}/api/bookings`),
     ])
+
+    if (!classesResponse.ok || !bookingsResponse.ok) {
+      throw new Error('Failed to load dashboard data')
+    }
 
     classes.value = await classesResponse.json()
     bookings.value = await bookingsResponse.json()
@@ -115,15 +121,39 @@ const loadDashboardData = async () => {
 }
 
 const cards = computed(() => {
-  const upcoming = bookings.value.filter((booking) => booking.status === 'Upcoming').length
-  const completed = bookings.value.filter((booking) => booking.status === 'Completed').length
-  const cancelled = bookings.value.filter((booking) => booking.status === 'Cancelled').length
+  const upcoming = bookings.value.filter(
+    (booking) => booking.status === 'Upcoming',
+  ).length
+
+  const completed = bookings.value.filter(
+    (booking) => booking.status === 'Completed',
+  ).length
+
+  const cancelled = bookings.value.filter(
+    (booking) => booking.status === 'Cancelled',
+  ).length
 
   return [
-    { title: 'Total Classes', value: classes.value.length, icon: '🧘‍♀️' },
-    { title: 'Total Bookings', value: bookings.value.length, icon: '📅' },
-    { title: 'Upcoming', value: upcoming, icon: '🔵' },
-    { title: 'Completed', value: completed + cancelled, icon: '✅' },
+    {
+      title: 'Total Classes',
+      value: classes.value.length,
+      icon: '🧘‍♀️',
+    },
+    {
+      title: 'Total Bookings',
+      value: bookings.value.length,
+      icon: '📅',
+    },
+    {
+      title: 'Upcoming',
+      value: upcoming,
+      icon: '🔵',
+    },
+    {
+      title: 'Completed',
+      value: completed + cancelled,
+      icon: '✅',
+    },
   ]
 })
 

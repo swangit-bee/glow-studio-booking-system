@@ -155,6 +155,8 @@
 import { onMounted, ref } from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 const CLOUDINARY_CLOUD_NAME = 'dhimhazp4'
 const CLOUDINARY_UPLOAD_PRESET = 'glow_studio_upload'
 
@@ -180,7 +182,7 @@ const loadClasses = async () => {
   try {
     loading.value = true
 
-    const response = await fetch('http://localhost:5000/api/classes')
+    const response = await fetch(`${API_URL}/api/classes`)
 
     if (!response.ok) {
       throw new Error('Failed to load classes')
@@ -252,7 +254,7 @@ const saveClass = async () => {
     let response
 
     if (editingId.value) {
-      response = await fetch(`http://localhost:5000/api/classes/${editingId.value}`, {
+      response = await fetch(`${API_URL}/api/classes/${editingId.value}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -260,7 +262,7 @@ const saveClass = async () => {
         body: JSON.stringify(payload),
       })
     } else {
-      response = await fetch('http://localhost:5000/api/classes', {
+      response = await fetch(`${API_URL}/api/classes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -312,7 +314,7 @@ const deleteClass = async (id) => {
   errorMessage.value = ''
 
   try {
-    const response = await fetch(`http://localhost:5000/api/classes/${id}`, {
+    const response = await fetch(`${API_URL}/api/classes/${id}`, {
       method: 'DELETE',
     })
 

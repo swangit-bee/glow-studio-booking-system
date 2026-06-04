@@ -114,6 +114,8 @@
 import { computed, onMounted, ref } from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 const search = ref('')
 const selectedStatus = ref('')
 const bookings = ref([])
@@ -123,7 +125,7 @@ const loadBookings = async () => {
   try {
     loading.value = true
 
-    const response = await fetch('http://localhost:5000/api/bookings')
+    const response = await fetch(`${API_URL}/api/bookings`)
 
     if (!response.ok) {
       throw new Error('Failed to load bookings')
@@ -160,7 +162,7 @@ const statusClass = (status) => {
 
 const updateStatus = async (id, status) => {
   try {
-    const response = await fetch(`http://localhost:5000/api/bookings/${id}`, {
+    const response = await fetch(`${API_URL}/api/bookings/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -190,7 +192,7 @@ const deleteBooking = async (id) => {
   if (!confirmed) return
 
   try {
-    const response = await fetch(`http://localhost:5000/api/bookings/${id}`, {
+    const response = await fetch(`${API_URL}/api/bookings/${id}`, {
       method: 'DELETE',
     })
 
@@ -208,18 +210,3 @@ onMounted(() => {
   loadBookings()
 })
 </script>
-
-<style scoped>
-.input {
-  width: 100%;
-  border-radius: 1rem;
-  border: 1px solid #e7e5e4;
-  background: white;
-  padding: 1rem 1.25rem;
-  outline: none;
-}
-
-.input:focus {
-  box-shadow: 0 0 0 2px #1c1917;
-}
-</style>

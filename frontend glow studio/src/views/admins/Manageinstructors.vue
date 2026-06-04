@@ -130,6 +130,8 @@
 import { onMounted, ref } from 'vue'
 import Navbar from '../../components/Navbar.vue'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 const CLOUDINARY_CLOUD_NAME = 'dhimhazp4'
 const CLOUDINARY_UPLOAD_PRESET = 'glow_studio_upload'
 
@@ -154,7 +156,7 @@ const loadInstructors = async () => {
   try {
     loading.value = true
 
-    const response = await fetch('http://localhost:5000/api/instructors')
+    const response = await fetch(`${API_URL}/api/instructors`)
 
     if (!response.ok) {
       throw new Error('Failed to load instructors')
@@ -223,7 +225,7 @@ const saveInstructor = async () => {
     let response
 
     if (editingId.value) {
-      response = await fetch(`http://localhost:5000/api/instructors/${editingId.value}`, {
+      response = await fetch(`${API_URL}/api/instructors/${editingId.value}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -231,7 +233,7 @@ const saveInstructor = async () => {
         body: JSON.stringify(payload),
       })
     } else {
-      response = await fetch('http://localhost:5000/api/instructors', {
+      response = await fetch(`${API_URL}/api/instructors`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -283,7 +285,7 @@ const deleteInstructor = async (id) => {
   errorMessage.value = ''
 
   try {
-    const response = await fetch(`http://localhost:5000/api/instructors/${id}`, {
+    const response = await fetch(`${API_URL}/api/instructors/${id}`, {
       method: 'DELETE',
     })
 

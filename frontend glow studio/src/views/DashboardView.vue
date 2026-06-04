@@ -28,7 +28,10 @@
             :key="stat.label"
             class="rounded-[2rem] bg-white p-6 shadow-sm"
           >
-            <div class="text-4xl">{{ stat.icon }}</div>
+            <component
+              :is="stat.icon"
+              class="h-10 w-10 text-stone-900"
+/>
             <p class="mt-4 text-sm text-stone-500">{{ stat.label }}</p>
             <h2 class="mt-1 text-3xl font-bold">{{ stat.value }}</h2>
           </div>
@@ -124,6 +127,15 @@ import { computed, onMounted, ref } from 'vue'
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 
+import {
+  CalendarDays,
+  CheckCircle,
+  Heart,
+  Crown,
+} from 'lucide-vue-next'
+
+const API_URL = import.meta.env.VITE_API_URL
+
 const currentUser = ref(null)
 const bookings = ref([])
 const loading = ref(true)
@@ -148,7 +160,7 @@ const loadDashboard = async () => {
       return
     }
 
-    const response = await fetch('http://localhost:5000/api/bookings')
+    const response = await fetch(`${API_URL}/api/bookings`)
 
     if (!response.ok) {
       throw new Error('Failed to load bookings')
@@ -188,7 +200,10 @@ const favouriteClass = computed(() => {
 
 const progressPercentage = computed(() => {
   const monthlyGoal = 4
-  return Math.min(Math.round((completedBookings.value.length / monthlyGoal) * 100), 100)
+  return Math.min(
+    Math.round((completedBookings.value.length / monthlyGoal) * 100),
+    100,
+  )
 })
 
 const progressMessage = computed(() => {
@@ -207,22 +222,22 @@ const stats = computed(() => {
     {
       label: 'Total Bookings',
       value: bookings.value.length,
-      icon: '📅',
+      icon: CalendarDays,
     },
     {
       label: 'Completed',
       value: completedBookings.value.length,
-      icon: '✅',
+      icon: CheckCircle,
     },
     {
       label: 'Favourite Class',
       value: favouriteClass.value,
-      icon: '🌿',
+      icon: Heart,
     },
     {
       label: 'Membership',
       value: membership.value ? membership.value.planName : 'No Plan',
-      icon: '🎓',
+      icon: Crown,
     },
   ]
 })

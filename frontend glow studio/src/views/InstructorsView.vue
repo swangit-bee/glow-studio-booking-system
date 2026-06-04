@@ -115,8 +115,9 @@ const iconMap = {
 
 const loadInstructors = async () => {
   try {
-    const response = await fetch('http://localhost:5000/api/instructors')
-
+    const response = await fetch(
+  `${import.meta.env.VITE_API_URL}/api/instructors`
+)
     if (!response.ok) {
       throw new Error('Failed to load instructors')
     }

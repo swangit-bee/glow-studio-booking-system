@@ -74,6 +74,7 @@
               v-model="booking.name"
               type="text"
               placeholder="Full name"
+              :readonly="!!currentUser"
               class="rounded-2xl border border-stone-200 bg-[#FAF7F2] px-5 py-4 outline-none focus:ring-2 focus:ring-stone-900"
             />
 
@@ -81,6 +82,7 @@
               v-model="booking.email"
               type="email"
               placeholder="Email address"
+              :readonly="!!currentUser"
               class="rounded-2xl border border-stone-200 bg-[#FAF7F2] px-5 py-4 outline-none focus:ring-2 focus:ring-stone-900"
             />
           </div>
@@ -168,12 +170,15 @@ import { useRoute, useRouter } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 const route = useRoute()
 const router = useRouter()
 
 const error = ref('')
 const showModal = ref(false)
 const classes = ref([])
+const currentUser = ref(null)
 
 const booking = ref({
   className: '',
@@ -189,11 +194,16 @@ const times = ['8:00 AM', '10:00 AM', '2:00 PM', '6:00 PM']
 
 onMounted(async () => {
   try {
-    const response = await fetch('http://localhost:5000/api/classes')
+    currentUser.value = JSON.parse(localStorage.getItem('glowUser'))
 
-    if (!response.ok) {
-      throw new Error('Failed to load classes')
+    if (currentUser.value) {
+      booking.value.name = currentUser.value.name
+      booking.value.email = currentUser.value.email
     }
+
+    const response = await fetch(`${API_URL}/api/classes`)
+
+    if (!response.ok) throw new Error('Failed to load classes')
 
     const data = await response.json()
     classes.value = data
@@ -202,10 +212,7 @@ onMounted(async () => {
 
     if (classId) {
       const selectedClass = data.find((item) => item.id === Number(classId))
-
-      if (selectedClass) {
-        booking.value.className = selectedClass.name
-      }
+      if (selectedClass) booking.value.className = selectedClass.name
     }
   } catch (err) {
     console.error(err)
@@ -214,6 +221,16 @@ onMounted(async () => {
 })
 
 const confirmBooking = async () => {
+  if (!currentUser.value) {
+    error.value = 'Please login before making a booking.'
+
+    setTimeout(() => {
+      router.push('/login')
+    }, 500)
+
+    return
+  }
+
   if (
     !booking.value.className ||
     !booking.value.date ||
@@ -226,14 +243,16 @@ const confirmBooking = async () => {
   }
 
   try {
-    const selectedClass = classes.value.find((item) => item.name === booking.value.className)
+    const selectedClass = classes.value.find(
+      (item) => item.name === booking.value.className,
+    )
 
     if (!selectedClass) {
       error.value = 'Selected class is not valid.'
       return
     }
 
-    const response = await fetch('http://localhost:5000/api/bookings', {
+    const response = await fetch(`${API_URL}/api/bookings`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -250,9 +269,7 @@ const confirmBooking = async () => {
       }),
     })
 
-    if (!response.ok) {
-      throw new Error('Booking failed')
-    }
+    if (!response.ok) throw new Error('Booking failed')
 
     error.value = ''
     showModal.value = true

@@ -103,6 +103,8 @@ import { useRoute } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 const route = useRoute()
 
 const classItem = ref(null)
@@ -129,7 +131,7 @@ const benefitsMap = {
 
 onMounted(async () => {
   try {
-    const response = await fetch(`http://localhost:5000/api/classes/${route.params.id}`)
+    const response = await fetch(`${API_URL}/api/classes/${route.params.id}`)
 
     if (!response.ok) {
       throw new Error('Class not found')
@@ -151,6 +153,7 @@ onMounted(async () => {
 
 const benefits = computed(() => {
   if (!classItem.value) return []
+
   return benefitsMap[classItem.value.name] || [
     'Improve movement control',
     'Support body strength',

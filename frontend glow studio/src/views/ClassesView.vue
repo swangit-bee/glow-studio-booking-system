@@ -183,6 +183,8 @@ import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 import classesBgImage from '../assets/images/classes1.jpg'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 const search = ref('')
 const selectedLevel = ref('')
 const classes = ref([])
@@ -221,7 +223,7 @@ const iconMap = {
 
 onMounted(async () => {
   try {
-    const response = await fetch('http://localhost:5000/api/classes')
+    const response = await fetch(`${API_URL}/api/classes`)
 
     if (!response.ok) {
       throw new Error('Failed to fetch classes')
@@ -243,8 +245,14 @@ onMounted(async () => {
 
 const filteredClasses = computed(() => {
   return classes.value.filter((item) => {
-    const matchSearch = item.name.toLowerCase().includes(search.value.toLowerCase())
-    const matchLevel = selectedLevel.value === '' || item.level === selectedLevel.value
+    const matchSearch = item.name
+      .toLowerCase()
+      .includes(search.value.toLowerCase())
+
+    const matchLevel =
+      selectedLevel.value === '' ||
+      item.level === selectedLevel.value
+
     return matchSearch && matchLevel
   })
 })

@@ -5,9 +5,7 @@
         Glow Studio ✨
       </RouterLink>
 
-      <!-- Desktop Navigation -->
       <div class="hidden items-center gap-8 md:flex">
-        <!-- Guest -->
         <template v-if="!currentUser">
           <RouterLink to="/" class="nav-link">Home</RouterLink>
           <RouterLink to="/classes" class="nav-link">Classes</RouterLink>
@@ -16,7 +14,6 @@
           <RouterLink to="/membership" class="nav-link">Membership</RouterLink>
         </template>
 
-        <!-- Member -->
         <template v-else-if="currentUser.role === 'member'">
           <RouterLink to="/" class="nav-link">Home</RouterLink>
           <RouterLink to="/classes" class="nav-link">Classes</RouterLink>
@@ -24,7 +21,6 @@
           <RouterLink to="/dashboard" class="nav-link">Dashboard</RouterLink>
         </template>
 
-        <!-- Admin -->
         <template v-else-if="currentUser.role === 'admin'">
           <RouterLink to="/admin" class="nav-link">Admin Dashboard</RouterLink>
           <RouterLink to="/admin/classes" class="nav-link">Classes</RouterLink>
@@ -33,7 +29,6 @@
         </template>
       </div>
 
-      <!-- Desktop Action -->
       <div class="hidden items-center gap-3 md:flex">
         <RouterLink
           v-if="!currentUser"
@@ -52,7 +47,6 @@
         </button>
       </div>
 
-      <!-- Mobile Menu Button -->
       <button
         @click="menuOpen = !menuOpen"
         class="rounded-full bg-stone-900 px-4 py-2 text-sm font-semibold text-white md:hidden"
@@ -61,10 +55,8 @@
       </button>
     </div>
 
-    <!-- Mobile Navigation -->
     <div v-if="menuOpen" class="border-t border-stone-200 bg-white px-6 py-5 md:hidden">
       <div class="grid gap-4">
-        <!-- Guest Mobile -->
         <template v-if="!currentUser">
           <RouterLink @click="closeMenu" to="/" class="mobile-link">Home</RouterLink>
           <RouterLink @click="closeMenu" to="/classes" class="mobile-link">Classes</RouterLink>
@@ -81,7 +73,6 @@
           </RouterLink>
         </template>
 
-        <!-- Member Mobile -->
         <template v-else-if="currentUser.role === 'member'">
           <RouterLink @click="closeMenu" to="/" class="mobile-link">Home</RouterLink>
           <RouterLink @click="closeMenu" to="/classes" class="mobile-link">Classes</RouterLink>
@@ -96,7 +87,6 @@
           </button>
         </template>
 
-        <!-- Admin Mobile -->
         <template v-else-if="currentUser.role === 'admin'">
           <RouterLink @click="closeMenu" to="/admin" class="mobile-link">Admin Dashboard</RouterLink>
           <RouterLink @click="closeMenu" to="/admin/classes" class="mobile-link">Manage Classes</RouterLink>
@@ -116,30 +106,85 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { supabase } from '../lib/supabase'
 
 const router = useRouter()
 const menuOpen = ref(false)
 const currentUser = ref(null)
 
-const loadUser = () => {
-  currentUser.value = JSON.parse(localStorage.getItem('glowUser'))
+const setUserFromSupabase = (user) => {
+  if (!user) {
+    const savedUser = JSON.parse(localStorage.getItem('glowUser'))
+
+    if (savedUser?.role === 'admin') {
+      currentUser.value = savedUser
+      return
+    }
+
+    currentUser.value = null
+    localStorage.removeItem('glowUser')
+    return
+  }
+
+  const glowUser = {
+    id: user.id,
+    name: user.user_metadata?.full_name || user.email.split('@')[0],
+    email: user.email,
+    role: user.email === 'admin@glowstudio.com' ? 'admin' : 'member',
+  }
+
+  currentUser.value = glowUser
+  localStorage.setItem('glowUser', JSON.stringify(glowUser))
+}
+
+const loadUser = async () => {
+  const savedUser = JSON.parse(localStorage.getItem('glowUser'))
+
+  if (savedUser?.role === 'admin') {
+    currentUser.value = savedUser
+    return
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  setUserFromSupabase(user)
 }
 
 const closeMenu = () => {
   menuOpen.value = false
 }
 
-const logout = () => {
+const logout = async () => {
+  const savedUser = JSON.parse(localStorage.getItem('glowUser'))
+
+  if (savedUser?.role !== 'admin') {
+    await supabase.auth.signOut()
+  }
+
   localStorage.removeItem('glowUser')
   currentUser.value = null
   menuOpen.value = false
+
   router.push('/')
 }
 
 onMounted(() => {
   loadUser()
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    const savedUser = JSON.parse(localStorage.getItem('glowUser'))
+
+    if (savedUser?.role === 'admin') {
+      currentUser.value = savedUser
+      return
+    }
+
+    setUserFromSupabase(session?.user || null)
+  })
 })
 </script>
 

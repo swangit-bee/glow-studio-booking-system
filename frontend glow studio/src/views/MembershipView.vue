@@ -64,7 +64,10 @@
             Most Popular
           </span>
 
-          <div class="text-5xl">{{ plan.icon }}</div>
+          <component
+  :is="plan.icon"
+  class="h-12 w-12 text-stone-900"
+/>
 
           <h2 class="mt-6 text-2xl font-bold">{{ plan.name }}</h2>
 
@@ -102,6 +105,13 @@ import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 import pilatesHeroImage from '../assets/images/member1.jpg'
 
+import {
+  Sparkles,
+  GraduationCap,
+  Dumbbell,
+  Crown,
+} from 'lucide-vue-next'
+
 const router = useRouter()
 
 const currentUser = ref(null)
@@ -113,7 +123,7 @@ const plans = [
     name: 'Drop-In Glow',
     price: 38,
     period: '/ class',
-    icon: '🌿',
+    icon: Sparkles,
     popular: false,
     description: 'Perfect for trying out one Pilates session.',
     benefits: ['Single class access', 'Beginner friendly', 'Flexible booking'],
@@ -123,7 +133,7 @@ const plans = [
     name: 'Student Flow',
     price: 120,
     period: '/ month',
-    icon: '🎓',
+    icon: GraduationCap,
     popular: true,
     description: 'Affordable plan for students who want consistent movement.',
     benefits: ['4 classes per month', 'Student-friendly pricing', 'Booking history'],
@@ -133,7 +143,7 @@ const plans = [
     name: 'Monthly Sculpt',
     price: 180,
     period: '/ month',
-    icon: '🔥',
+    icon: Dumbbell,
     popular: false,
     description: 'For users building strength and routine.',
     benefits: ['8 classes per month', 'Priority slots', 'Progress tracking'],
@@ -143,7 +153,7 @@ const plans = [
     name: 'Unlimited Lumé',
     price: 280,
     period: '/ month',
-    icon: '✨',
+    icon: Crown,
     popular: false,
     description: 'Full access for regular wellness lovers.',
     benefits: ['Unlimited classes', 'Premium booking access', 'Instructor preference'],

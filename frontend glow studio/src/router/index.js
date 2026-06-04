@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { supabase } from '../lib/supabase'
 
 import HomeView from '../views/HomeView.vue'
 import ClassesView from '../views/ClassesView.vue'
@@ -27,14 +28,65 @@ const router = createRouter({
     { path: '/instructors', component: InstructorsView },
     { path: '/membership', component: MembershipView },
     { path: '/login', component: LoginView },
-    { path: '/dashboard', component: DashboardView },
-    { path: '/booking-history', component: BookingHistoryView },
 
-    { path: '/admin', component: AdminDashboard },
-    { path: '/admin/classes', component: ManageClasses },
-    { path: '/admin/instructors', component: ManageInstructors },
-    { path: '/admin/bookings', component: ManageBookings },
+    {
+      path: '/dashboard',
+      component: DashboardView,
+      meta: { requiresAuth: true },
+    },
+
+    {
+      path: '/booking-history',
+      component: BookingHistoryView,
+      meta: { requiresAuth: true },
+    },
+
+    {
+      path: '/admin',
+      component: AdminDashboard,
+      meta: { requiresAdmin: true },
+    },
+
+    {
+      path: '/admin/classes',
+      component: ManageClasses,
+      meta: { requiresAdmin: true },
+    },
+
+    {
+      path: '/admin/instructors',
+      component: ManageInstructors,
+      meta: { requiresAdmin: true },
+    },
+
+    {
+      path: '/admin/bookings',
+      component: ManageBookings,
+      meta: { requiresAdmin: true },
+    },
   ],
+})
+
+router.beforeEach(async (to) => {
+  const savedUser = JSON.parse(localStorage.getItem('glowUser'))
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (to.meta.requiresAuth) {
+    if (!user && savedUser?.role !== 'admin') {
+      return '/login'
+    }
+  }
+
+  if (to.meta.requiresAdmin) {
+    if (savedUser?.role !== 'admin') {
+      return '/'
+    }
+  }
+
+  return true
 })
 
 export default router

@@ -106,7 +106,8 @@
       </div>
     </section>
 
-    <section class="bg-white px-6 py-24">
+    
+  <section class="bg-white px-6 py-24">
   <div class="mx-auto max-w-7xl">
     <div class="mb-16 text-center">
       <p class="mb-4 text-sm font-semibold uppercase tracking-[0.3em] text-stone-500">
@@ -114,7 +115,7 @@
       </p>
 
       <h2 class="text-5xl font-bold text-stone-900">
-        Why Choose Pilates?
+        Why Choose Glow Studio?
       </h2>
 
       <p class="mx-auto mt-4 max-w-2xl text-stone-600">
@@ -122,46 +123,25 @@
       </p>
     </div>
 
-    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <div class="rounded-[2rem] bg-[#FAF7F2] p-8 shadow-sm">
-        <h3 class="mt-4 text-2xl font-bold">Reduce Stress</h3>
-        <p class="mt-3 text-stone-600">
-          Calm movement and mindful breathing help reduce daily stress.
-        </p>
-      </div>
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div
+        v-for="benefit in benefits"
+        :key="benefit.title"
+        class="rounded-[2rem] bg-[#FAF7F2] p-8 shadow-sm transition hover:-translate-y-2 hover:shadow-xl"
+      >
+        <div class="flex justify-center">
+  <component
+    :is="benefit.icon"
+    class="h-16 w-16 text-stone-900"
+  />
+</div>
 
-      <div class="rounded-[2rem] bg-[#FAF7F2] p-8 shadow-sm">
-        <h3 class="mt-4 text-2xl font-bold">Build Strength</h3>
-        <p class="mt-3 text-stone-600">
-          Develop a stronger core and improve overall body stability.
-        </p>
-      </div>
+        <h3 class="mt-5 text-center text-2xl font-bold">
+          {{ benefit.title }}
+        </h3>
 
-      <div class="rounded-[2rem] bg-[#FAF7F2] p-8 shadow-sm">
-        <h3 class="mt-4 text-2xl font-bold">Improve Flexibility</h3>
-        <p class="mt-3 text-stone-600">
-          Enhance mobility and range of motion through controlled movements.
-        </p>
-      </div>
-
-      <div class="rounded-[2rem] bg-[#FAF7F2] p-8 shadow-sm">
-        <h3 class="mt-4 text-2xl font-bold">Better Posture</h3>
-        <p class="mt-3 text-stone-600">
-          Strengthen postural muscles and improve body alignment.
-        </p>
-      </div>
-
-      <div class="rounded-[2rem] bg-[#FAF7F2] p-8 shadow-sm">
-        <h3 class="mt-4 text-2xl font-bold">Mind-Body Balance</h3>
-        <p class="mt-3 text-stone-600">
-          Connect movement with breathing for a healthier lifestyle.
-        </p>
-      </div>
-
-      <div class="rounded-[2rem] bg-[#FAF7F2] p-8 shadow-sm">
-        <h3 class="mt-4 text-2xl font-bold">Beginner Friendly</h3>
-        <p class="mt-3 text-stone-600">
-          Suitable for all fitness levels with guided instruction.
+        <p class="mt-3 text-center text-stone-600">
+          {{ benefit.description }}
         </p>
       </div>
     </div>
@@ -314,6 +294,43 @@ import gallery4 from '../assets/images/gallery4.jpg'
 import gallery5 from '../assets/images/gallery5.jpg'
 import gallery6 from '../assets/images/gallery6.jpg'
 
+import {
+  ShieldCheck,
+  Heart,
+  Users,
+  Sparkles,
+} from 'lucide-vue-next'
+
+const benefits = [
+  {
+    title: 'Expert Instructors',
+    description:
+      'Learn from experienced Pilates instructors who guide every movement safely.',
+    icon: ShieldCheck,
+  },
+  {
+    title: 'Mind & Body Wellness',
+    description:
+      'Improve strength, flexibility, posture, and mental balance through mindful movement.',
+    icon: Heart,
+  },
+  {
+    title: 'Supportive Community',
+    description:
+      'Join a calm and welcoming space designed for beginners and regular members.',
+    icon: Users,
+  },
+  {
+    title: 'Premium Experience',
+    description:
+      'Enjoy a smooth booking system, beautiful class visuals, and personalised recommendations.',
+    icon: Sparkles,
+  },
+]
+
+
+
+
 const instructors = ref([])
 const loadingInstructors = ref(true)
 
@@ -348,8 +365,9 @@ let sliderInterval = null
 
 const loadInstructors = async () => {
   try {
-    const response = await fetch('http://localhost:5000/api/instructors')
-
+    const response = await fetch(
+  `${import.meta.env.VITE_API_URL}/api/instructors`
+)
     if (!response.ok) {
       throw new Error('Failed to load instructors')
     }

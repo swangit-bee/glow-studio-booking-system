@@ -45,7 +45,11 @@
             class="rounded-[2rem] bg-white p-6 text-left shadow-sm transition hover:-translate-y-2 hover:shadow-xl"
             :class="selectedMood?.id === mood.id ? 'ring-2 ring-stone-900' : ''"
           >
-            <div class="text-5xl">{{ mood.icon }}</div>
+            <component
+              :is="mood.icon"
+              class="h-12 w-12 text-stone-900"
+            />
+
             <h2 class="mt-4 text-xl font-bold">{{ mood.label }}</h2>
             <p class="mt-2 text-sm text-stone-600">{{ mood.description }}</p>
           </button>
@@ -99,9 +103,7 @@
               </RouterLink>
             </div>
 
-            <div
-              class="flex items-center justify-center overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#F5EFE6] to-[#D9C5B2]/40"
-            >
+            <div class="flex items-center justify-center overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#F5EFE6] to-[#D9C5B2]/40">
               <img
                 v-if="recommendedClass.image_url"
                 :src="recommendedClass.image_url"
@@ -135,6 +137,14 @@ import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 import pilatesHeroImage from '../assets/images/mood1.jpg'
 
+import {
+  Flower2,
+  Dumbbell,
+  HeartHandshake,
+} from 'lucide-vue-next'
+
+const API_URL = import.meta.env.VITE_API_URL
+
 const selectedMood = ref(null)
 const classes = ref([])
 const loading = ref(true)
@@ -145,7 +155,7 @@ const moods = [
     label: 'I feel stressed',
     description: 'I need something calming and gentle.',
     targetClassName: 'Slow Flow Pilates',
-    icon: '😌',
+    icon: Flower2,
     resultIcon: '🌿',
     reason:
       'Slow Flow Pilates is recommended because it focuses on breathing, posture, and controlled movements to help release stress.',
@@ -155,7 +165,7 @@ const moods = [
     label: 'I want to tone',
     description: 'I want a stronger core and body control.',
     targetClassName: 'Core Sculpt',
-    icon: '🔥',
+    icon: Dumbbell,
     resultIcon: '🔥',
     reason:
       'Core Sculpt is recommended because it focuses on strengthening core muscles, improving balance, and building endurance.',
@@ -165,7 +175,7 @@ const moods = [
     label: 'I need flexibility',
     description: 'I want to stretch, recover, and move better.',
     targetClassName: 'Flex & Restore',
-    icon: '🧘🏻‍♀️',
+    icon: HeartHandshake,
     resultIcon: '🧘🏻‍♀️',
     reason:
       'Flex & Restore is recommended because it supports mobility, muscle recovery, and relaxation through gentle movement.',
@@ -186,7 +196,7 @@ const selectMood = (mood) => {
 
 const loadClasses = async () => {
   try {
-    const response = await fetch('http://localhost:5000/api/classes')
+    const response = await fetch(`${API_URL}/api/classes`)
 
     if (!response.ok) {
       throw new Error('Failed to load classes')

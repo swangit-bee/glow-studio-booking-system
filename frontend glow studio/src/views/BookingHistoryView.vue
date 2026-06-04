@@ -117,6 +117,8 @@ import { onMounted, ref } from 'vue'
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 
+const API_URL = import.meta.env.VITE_API_URL
+
 const currentUser = ref(null)
 const bookings = ref([])
 const loading = ref(true)
@@ -131,7 +133,7 @@ const loadBookings = async () => {
       return
     }
 
-    const response = await fetch('http://localhost:5000/api/bookings')
+    const response = await fetch(`${API_URL}/api/bookings`)
 
     if (!response.ok) {
       throw new Error('Failed to load bookings')
@@ -158,7 +160,7 @@ const statusClass = (status) => {
 
 const cancelBooking = async (id) => {
   try {
-    const response = await fetch(`http://localhost:5000/api/bookings/${id}`, {
+    const response = await fetch(`${API_URL}/api/bookings/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

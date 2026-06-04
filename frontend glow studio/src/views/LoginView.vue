@@ -77,9 +77,10 @@
 
             <button
               type="submit"
-              class="w-full rounded-full bg-stone-900 py-4 text-sm font-semibold text-white transition hover:bg-stone-700"
+              :disabled="loading"
+              class="w-full rounded-full bg-stone-900 py-4 text-sm font-semibold text-white transition hover:bg-stone-700 disabled:opacity-50"
             >
-              {{ isLogin ? 'Login' : 'Create Account' }}
+              {{ loading ? 'Please wait...' : isLogin ? 'Login' : 'Create Account' }}
             </button>
           </form>
 
@@ -103,6 +104,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { supabase } from '../lib/supabase'
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
 
@@ -111,6 +113,7 @@ const router = useRouter()
 const isLogin = ref(true)
 const error = ref('')
 const success = ref('')
+const loading = ref(false)
 
 const form = ref({
   name: '',
@@ -118,24 +121,38 @@ const form = ref({
   password: '',
 })
 
-const submitForm = () => {
+const saveGlowUser = (user, name, role = 'member') => {
+  localStorage.setItem(
+    'glowUser',
+    JSON.stringify({
+      id: user.id,
+      name,
+      email: user.email,
+      role,
+    }),
+  )
+}
+
+const submitForm = async () => {
   error.value = ''
   success.value = ''
-
-  if (!isLogin.value && !form.value.name) {
-    error.value = 'Please enter your full name.'
-    return
-  }
 
   if (!form.value.email || !form.value.password) {
     error.value = 'Please enter your email and password.'
     return
   }
 
+  if (!isLogin.value && !form.value.name) {
+    error.value = 'Please enter your full name.'
+    return
+  }
+
   const email = form.value.email.toLowerCase()
 
-  if (isLogin.value) {
-    if (email === 'admin@glowstudio.com' && form.value.password === 'admin123') {
+  try {
+    loading.value = true
+
+    if (isLogin.value && email === 'admin@glowstudio.com' && form.value.password === 'admin123') {
       localStorage.setItem(
         'glowUser',
         JSON.stringify({
@@ -149,63 +166,63 @@ const submitForm = () => {
 
       setTimeout(() => {
         router.push('/admin')
-      }, 800)
+      }, 700)
 
       return
     }
 
-    const savedUser = JSON.parse(localStorage.getItem('glowRegisteredUser'))
+    if (isLogin.value) {
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password: form.value.password,
+      })
 
-    if (
-      savedUser &&
-      savedUser.email === email &&
-      savedUser.password === form.value.password
-    ) {
-      localStorage.setItem(
-        'glowUser',
-        JSON.stringify({
-          name: savedUser.name,
-          email: savedUser.email,
-          role: 'member',
-        }),
-      )
+      if (loginError) {
+        throw loginError
+      }
+
+      const name =
+        data.user.user_metadata?.full_name ||
+        data.user.email.split('@')[0]
+
+      saveGlowUser(data.user, name)
 
       success.value = 'Login successful. Redirecting...'
 
       setTimeout(() => {
         router.push('/dashboard')
-      }, 800)
+      }, 700)
 
       return
     }
 
-    error.value = 'Invalid login details. Please register first or use admin login.'
-    return
-  }
-
-  localStorage.setItem(
-    'glowRegisteredUser',
-    JSON.stringify({
-      name: form.value.name,
+    const { data, error: registerError } = await supabase.auth.signUp({
       email,
       password: form.value.password,
-    }),
-  )
+      options: {
+        data: {
+          full_name: form.value.name,
+        },
+      },
+    })
 
-  localStorage.setItem(
-    'glowUser',
-    JSON.stringify({
-      name: form.value.name,
-      email,
-      role: 'member',
-    }),
-  )
+    if (registerError) {
+      throw registerError
+    }
 
-  success.value = 'Account created successfully. Redirecting...'
+    saveGlowUser(data.user, form.value.name)
 
-  setTimeout(() => {
-    router.push('/dashboard')
-  }, 800)
+    success.value = 'Account created successfully. Redirecting...'
+
+    setTimeout(() => {
+      router.push('/dashboard')
+    }, 700)
+  } catch (err) {
+    console.error(err)
+    error.value = err.message || 'Authentication failed.'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
