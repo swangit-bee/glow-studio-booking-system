@@ -16,8 +16,9 @@
       </div>
 
       <div class="grid gap-8 lg:grid-cols-3">
-        <div class="lg:col-span-2 rounded-[2.5rem] bg-white p-8 shadow-xl">
+        <div class="rounded-[2.5rem] bg-white p-8 shadow-xl lg:col-span-2">
           <label class="block text-sm font-semibold text-stone-600">Choose Class</label>
+
           <select
             v-model="booking.className"
             class="mt-3 w-full rounded-2xl border border-stone-200 bg-[#FAF7F2] px-5 py-4 outline-none focus:ring-2 focus:ring-stone-900"
@@ -30,13 +31,18 @@
 
           <div class="mt-8">
             <label class="block text-sm font-semibold text-stone-600">Choose Date</label>
+
             <div class="mt-3 grid gap-3 md:grid-cols-4">
               <button
                 v-for="date in dates"
                 :key="date"
                 @click="booking.date = date"
                 class="rounded-2xl border px-4 py-4 text-sm font-semibold transition"
-                :class="booking.date === date ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-[#FAF7F2] text-stone-700'"
+                :class="
+                  booking.date === date
+                    ? 'border-stone-900 bg-stone-900 text-white'
+                    : 'border-stone-200 bg-[#FAF7F2] text-stone-700'
+                "
               >
                 {{ date }}
               </button>
@@ -45,13 +51,18 @@
 
           <div class="mt-8">
             <label class="block text-sm font-semibold text-stone-600">Choose Time</label>
+
             <div class="mt-3 grid gap-3 md:grid-cols-4">
               <button
                 v-for="time in times"
                 :key="time"
                 @click="booking.time = time"
                 class="rounded-2xl border px-4 py-4 text-sm font-semibold transition"
-                :class="booking.time === time ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 bg-[#FAF7F2] text-stone-700'"
+                :class="
+                  booking.time === time
+                    ? 'border-stone-900 bg-stone-900 text-white'
+                    : 'border-stone-200 bg-[#FAF7F2] text-stone-700'
+                "
               >
                 {{ time }}
               </button>
@@ -130,34 +141,39 @@
       >
         <div class="max-w-md rounded-[2rem] bg-white p-8 text-center shadow-2xl">
           <div class="text-6xl">✨</div>
+
           <h2 class="mt-4 text-3xl font-bold">Booking Confirmed</h2>
+
           <p class="mt-3 text-stone-600">
             Your {{ booking.className }} session has been reserved.
           </p>
 
           <button
-            @click="showModal = false"
+            @click="goToHistory"
             class="mt-6 rounded-full bg-stone-900 px-8 py-3 text-sm font-semibold text-white"
           >
-            Done
+            View Booking History
           </button>
         </div>
       </div>
     </section>
 
     <Footer />
-    <MobileBottomNav />
   </main>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
-import MobileBottomNav from '../components/MobileBottomNav.vue'
+
+const route = useRoute()
+const router = useRouter()
 
 const error = ref('')
 const showModal = ref(false)
+const classes = ref([])
 
 const booking = ref({
   className: '',
@@ -168,17 +184,36 @@ const booking = ref({
   notes: '',
 })
 
-const classes = [
-  { id: 1, name: 'Slow Flow Pilates', price: 38 },
-  { id: 2, name: 'Core Sculpt', price: 45 },
-  { id: 3, name: 'Flex & Restore', price: 35 },
-  { id: 4, name: 'Power Reformer', price: 55 },
-]
-
 const dates = ['Mon 10', 'Tue 11', 'Wed 12', 'Thu 13']
 const times = ['8:00 AM', '10:00 AM', '2:00 PM', '6:00 PM']
 
-const confirmBooking = () => { 
+onMounted(async () => {
+  try {
+    const response = await fetch('http://localhost:5000/api/classes')
+
+    if (!response.ok) {
+      throw new Error('Failed to load classes')
+    }
+
+    const data = await response.json()
+    classes.value = data
+
+    const classId = route.query.classId
+
+    if (classId) {
+      const selectedClass = data.find((item) => item.id === Number(classId))
+
+      if (selectedClass) {
+        booking.value.className = selectedClass.name
+      }
+    }
+  } catch (err) {
+    console.error(err)
+    error.value = 'Failed to load classes. Please make sure backend is running.'
+  }
+})
+
+const confirmBooking = async () => {
   if (
     !booking.value.className ||
     !booking.value.date ||
@@ -190,7 +225,45 @@ const confirmBooking = () => {
     return
   }
 
-  error.value = ''
-  showModal.value = true
+  try {
+    const selectedClass = classes.value.find((item) => item.name === booking.value.className)
+
+    if (!selectedClass) {
+      error.value = 'Selected class is not valid.'
+      return
+    }
+
+    const response = await fetch('http://localhost:5000/api/bookings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        customer_name: booking.value.name,
+        email: booking.value.email,
+        class_id: selectedClass.id,
+        class_name: booking.value.className,
+        instructor: selectedClass.instructor,
+        booking_date: booking.value.date,
+        booking_time: booking.value.time,
+        notes: booking.value.notes,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Booking failed')
+    }
+
+    error.value = ''
+    showModal.value = true
+  } catch (err) {
+    console.error(err)
+    error.value = 'Failed to create booking. Please try again.'
+  }
+}
+
+const goToHistory = () => {
+  showModal.value = false
+  router.push('/booking-history')
 }
 </script>

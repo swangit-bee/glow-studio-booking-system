@@ -1,10 +1,12 @@
 <template>
   <main class="min-h-screen bg-[#FAF7F2] p-6 text-stone-900">
-    <section class="mx-auto max-w-7xl">
+    <Navbar />
+
+    <section class="mx-auto max-w-7xl px-6 pt-32 pb-12">
       <div class="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <p class="mb-3 inline-flex rounded-full bg-white px-4 py-2 text-sm font-medium text-stone-600 shadow-sm">
-            Admin / Manage Bookings
+            Manage Bookings
           </p>
 
           <h1 class="text-4xl font-bold">Booking Management</h1>
@@ -32,7 +34,11 @@
         </select>
       </div>
 
-      <div class="space-y-5">
+      <div v-if="loading" class="rounded-[2rem] bg-white p-8 text-center text-stone-600 shadow-sm">
+        Loading bookings...
+      </div>
+
+      <div v-else class="space-y-5">
         <div
           v-for="booking in filteredBookings"
           :key="booking.id"
@@ -41,7 +47,7 @@
           <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div class="flex flex-wrap items-center gap-3">
-                <h2 class="text-2xl font-bold">{{ booking.className }}</h2>
+                <h2 class="text-2xl font-bold">{{ booking.class_name }}</h2>
 
                 <span
                   class="rounded-full px-3 py-1 text-xs font-semibold"
@@ -52,11 +58,12 @@
               </div>
 
               <p class="mt-2 text-stone-600">
-                {{ booking.customer }} • {{ booking.email }}
+                {{ booking.customer_name }} • {{ booking.email }}
               </p>
 
               <p class="mt-1 text-sm text-stone-500">
-                {{ booking.date }} • {{ booking.time }} • Instructor: {{ booking.instructor }}
+                {{ booking.booking_date }} • {{ booking.booking_time }} • Instructor:
+                {{ booking.instructor || 'Not assigned' }}
               </p>
             </div>
 
@@ -94,7 +101,7 @@
       </div>
 
       <div
-        v-if="filteredBookings.length === 0"
+        v-if="!loading && filteredBookings.length === 0"
         class="mt-8 rounded-[2rem] bg-white p-8 text-center text-stone-600 shadow-sm"
       >
         No bookings found.
@@ -104,51 +111,39 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import Navbar from '../../components/Navbar.vue'
 
 const search = ref('')
 const selectedStatus = ref('')
+const bookings = ref([])
+const loading = ref(true)
 
-const bookings = ref([
-  {
-    id: 1,
-    customer: 'Rasyidah Roslan',
-    email: 'rasyidah@example.com',
-    className: 'Slow Flow Pilates',
-    instructor: 'Maya Collins',
-    date: 'Monday, 10 June',
-    time: '8:00 AM',
-    status: 'Upcoming',
-  },
-  {
-    id: 2,
-    customer: 'Alya Rahman',
-    email: 'alya@example.com',
-    className: 'Core Sculpt',
-    instructor: 'Sofia Tan',
-    date: 'Friday, 14 June',
-    time: '6:00 PM',
-    status: 'Completed',
-  },
-  {
-    id: 3,
-    customer: 'Nadia Lee',
-    email: 'nadia@example.com',
-    className: 'Flex & Restore',
-    instructor: 'Aina Rahman',
-    date: 'Wednesday, 19 June',
-    time: '10:00 AM',
-    status: 'Cancelled',
-  },
-])
+const loadBookings = async () => {
+  try {
+    loading.value = true
+
+    const response = await fetch('http://localhost:5000/api/bookings')
+
+    if (!response.ok) {
+      throw new Error('Failed to load bookings')
+    }
+
+    bookings.value = await response.json()
+  } catch (error) {
+    console.error(error)
+  } finally {
+    loading.value = false
+  }
+}
 
 const filteredBookings = computed(() => {
   return bookings.value.filter((booking) => {
     const keyword = search.value.toLowerCase()
 
     const matchSearch =
-      booking.customer.toLowerCase().includes(keyword) ||
-      booking.className.toLowerCase().includes(keyword) ||
+      booking.customer_name.toLowerCase().includes(keyword) ||
+      booking.class_name.toLowerCase().includes(keyword) ||
       booking.email.toLowerCase().includes(keyword)
 
     const matchStatus = selectedStatus.value === '' || booking.status === selectedStatus.value
@@ -163,17 +158,55 @@ const statusClass = (status) => {
   return 'bg-red-100 text-red-700'
 }
 
-const updateStatus = (id, status) => {
-  const selectedBooking = bookings.value.find((booking) => booking.id === id)
+const updateStatus = async (id, status) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/bookings/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        status,
+      }),
+    })
 
-  if (selectedBooking) {
-    selectedBooking.status = status
+    if (!response.ok) {
+      throw new Error('Failed to update booking')
+    }
+
+    const selectedBooking = bookings.value.find((booking) => booking.id === id)
+
+    if (selectedBooking) {
+      selectedBooking.status = status
+    }
+  } catch (error) {
+    console.error(error)
   }
 }
 
-const deleteBooking = (id) => {
-  bookings.value = bookings.value.filter((booking) => booking.id !== id)
+const deleteBooking = async (id) => {
+  const confirmed = confirm('Delete this booking?')
+
+  if (!confirmed) return
+
+  try {
+    const response = await fetch(`http://localhost:5000/api/bookings/${id}`, {
+      method: 'DELETE',
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to delete booking')
+    }
+
+    bookings.value = bookings.value.filter((booking) => booking.id !== id)
+  } catch (error) {
+    console.error(error)
+  }
 }
+
+onMounted(() => {
+  loadBookings()
+})
 </script>
 
 <style scoped>

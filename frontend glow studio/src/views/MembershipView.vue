@@ -3,37 +3,59 @@
     <Navbar />
 
     <section
-      class="relative overflow-hidden px-6 py-20 min-h-[75vh] flex items-center"
-      :style="{ backgroundImage: `url(${pilatesHeroImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }"
+      class="relative flex min-h-[75vh] items-center overflow-hidden px-6 py-20"
+      :style="{
+        backgroundImage: `url(${pilatesHeroImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }"
     >
       <div class="absolute inset-0 bg-[#FAF7F2]/35"></div>
       <div class="absolute left-10 top-28 h-72 w-72 rounded-full bg-[#D9C5B2]/40 blur-3xl"></div>
       <div class="absolute right-10 top-40 h-96 w-96 rounded-full bg-[#A8BBA3]/30 blur-3xl"></div>
 
-      <div class="mx-auto mb-12 max-w-3xl text-center">
+      <div class="relative z-10 mx-auto max-w-3xl text-center">
         <p class="mb-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-medium text-stone-600 shadow-sm">
           Membership Plans
         </p>
 
-        <h1 class="text-5xl font-bold tracking-tight">Choose your glow plan</h1>
+        <h1 class="text-5xl font-bold tracking-tight">
+          Choose your glow plan
+        </h1>
 
         <p class="mt-4 text-stone-600">
           Flexible Pilates memberships designed for students, beginners, and regular wellness lovers.
         </p>
       </div>
-
-          
-        
     </section>
 
     <section class="mx-auto max-w-7xl px-6 pt-32 pb-20">
+      <div
+        v-if="selectedPlan"
+        class="mb-8 rounded-[2rem] bg-green-100 p-5 text-sm font-semibold text-green-800"
+      >
+        You selected {{ selectedPlan.name }}. Your membership has been saved to your dashboard.
+      </div>
+
+      <div
+        v-if="!currentUser"
+        class="mb-8 rounded-[2rem] bg-white p-6 text-center shadow-sm"
+      >
+        <h2 class="text-2xl font-bold">Login to activate a membership</h2>
+        <p class="mt-2 text-stone-600">
+          You can browse plans now, but you need to login or register before selecting a plan.
+        </p>
+      </div>
 
       <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <div
           v-for="plan in plans"
           :key="plan.id"
           class="relative rounded-[2rem] bg-white p-6 shadow-sm transition hover:-translate-y-2 hover:shadow-2xl"
-          :class="plan.popular ? 'ring-2 ring-stone-900' : ''"
+          :class="[
+            plan.popular ? 'ring-2 ring-stone-900' : '',
+            selectedPlan?.id === plan.id ? 'bg-[#F5EFE6]' : '',
+          ]"
         >
           <span
             v-if="plan.popular"
@@ -59,26 +81,31 @@
             </li>
           </ul>
 
-          <RouterLink
-            to="/booking"
-            class="mt-8 block rounded-full bg-stone-900 py-3 text-center text-sm font-semibold text-white transition hover:bg-stone-700"
+          <button
+            @click="selectPlan(plan)"
+            class="mt-8 w-full rounded-full bg-stone-900 py-3 text-center text-sm font-semibold text-white transition hover:bg-stone-700"
           >
-            Select Plan
-          </RouterLink>
+            {{ selectedPlan?.id === plan.id ? 'Selected' : 'Select Plan' }}
+          </button>
         </div>
       </div>
     </section>
 
     <Footer />
-    <MobileBottomNav />
   </main>
 </template>
 
 <script setup>
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
-import MobileBottomNav from '../components/MobileBottomNav.vue'
 import pilatesHeroImage from '../assets/images/member1.jpg'
+
+const router = useRouter()
+
+const currentUser = ref(null)
+const selectedPlan = ref(null)
 
 const plans = [
   {
@@ -122,4 +149,37 @@ const plans = [
     benefits: ['Unlimited classes', 'Premium booking access', 'Instructor preference'],
   },
 ]
+
+const selectPlan = (plan) => {
+  if (!currentUser.value) {
+    router.push('/login')
+    return
+  }
+
+  selectedPlan.value = plan
+
+  localStorage.setItem(
+    'glowMembership',
+    JSON.stringify({
+      userEmail: currentUser.value.email,
+      planName: plan.name,
+      price: plan.price,
+      period: plan.period,
+    }),
+  )
+
+  setTimeout(() => {
+    router.push('/dashboard')
+  }, 800)
+}
+
+onMounted(() => {
+  currentUser.value = JSON.parse(localStorage.getItem('glowUser'))
+
+  const savedMembership = JSON.parse(localStorage.getItem('glowMembership'))
+
+  if (savedMembership && currentUser.value && savedMembership.userEmail === currentUser.value.email) {
+    selectedPlan.value = plans.find((plan) => plan.name === savedMembership.planName)
+  }
+})
 </script>

@@ -1,24 +1,166 @@
 <template>
-  <nav class="fixed top-0 left-0 right-0 z-50 border-b border-white/40 bg-white/80 backdrop-blur-xl">
+  <nav class="fixed left-0 right-0 top-0 z-50 border-b border-white/40 bg-white/80 backdrop-blur-xl">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
       <RouterLink to="/" class="text-2xl font-bold tracking-tight text-stone-900">
         Glow Studio ✨
       </RouterLink>
 
+      <!-- Desktop Navigation -->
       <div class="hidden items-center gap-8 md:flex">
-        <RouterLink to="/" class="text-sm font-medium text-stone-600 transition hover:text-stone-950">Home</RouterLink>
-        <RouterLink to="/classes" class="text-sm font-medium text-stone-600 transition hover:text-stone-950">Classes</RouterLink>
-        <RouterLink to="/mood-quiz" class="text-sm font-medium text-stone-600 transition hover:text-stone-950">Mood Quiz</RouterLink>
-        <RouterLink to="/instructors" class="text-sm font-medium text-stone-600 transition hover:text-stone-950">Instructors</RouterLink>
-        <RouterLink to="/membership" class="text-sm font-medium text-stone-600 transition hover:text-stone-950">Membership</RouterLink>
+        <!-- Guest -->
+        <template v-if="!currentUser">
+          <RouterLink to="/" class="nav-link">Home</RouterLink>
+          <RouterLink to="/classes" class="nav-link">Classes</RouterLink>
+          <RouterLink to="/mood-quiz" class="nav-link">Mood Quiz</RouterLink>
+          <RouterLink to="/instructors" class="nav-link">Instructors</RouterLink>
+          <RouterLink to="/membership" class="nav-link">Membership</RouterLink>
+        </template>
+
+        <!-- Member -->
+        <template v-else-if="currentUser.role === 'member'">
+          <RouterLink to="/" class="nav-link">Home</RouterLink>
+          <RouterLink to="/classes" class="nav-link">Classes</RouterLink>
+          <RouterLink to="/booking-history" class="nav-link">History</RouterLink>
+          <RouterLink to="/dashboard" class="nav-link">Dashboard</RouterLink>
+        </template>
+
+        <!-- Admin -->
+        <template v-else-if="currentUser.role === 'admin'">
+          <RouterLink to="/admin" class="nav-link">Admin Dashboard</RouterLink>
+          <RouterLink to="/admin/classes" class="nav-link">Classes</RouterLink>
+          <RouterLink to="/admin/instructors" class="nav-link">Instructors</RouterLink>
+          <RouterLink to="/admin/bookings" class="nav-link">Bookings</RouterLink>
+        </template>
       </div>
 
-      <RouterLink
-        to="/login"
-        class="hidden rounded-full bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-700 md:block"
+      <!-- Desktop Action -->
+      <div class="hidden items-center gap-3 md:flex">
+        <RouterLink
+          v-if="!currentUser"
+          to="/login"
+          class="rounded-full bg-stone-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-700"
+        >
+          Login
+        </RouterLink>
+
+        <button
+          v-else
+          @click="logout"
+          class="rounded-full bg-red-100 px-5 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-200"
+        >
+          Logout
+        </button>
+      </div>
+
+      <!-- Mobile Menu Button -->
+      <button
+        @click="menuOpen = !menuOpen"
+        class="rounded-full bg-stone-900 px-4 py-2 text-sm font-semibold text-white md:hidden"
       >
-        Login
-      </RouterLink>
+        Menu
+      </button>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <div v-if="menuOpen" class="border-t border-stone-200 bg-white px-6 py-5 md:hidden">
+      <div class="grid gap-4">
+        <!-- Guest Mobile -->
+        <template v-if="!currentUser">
+          <RouterLink @click="closeMenu" to="/" class="mobile-link">Home</RouterLink>
+          <RouterLink @click="closeMenu" to="/classes" class="mobile-link">Classes</RouterLink>
+          <RouterLink @click="closeMenu" to="/mood-quiz" class="mobile-link">Mood Quiz</RouterLink>
+          <RouterLink @click="closeMenu" to="/instructors" class="mobile-link">Instructors</RouterLink>
+          <RouterLink @click="closeMenu" to="/membership" class="mobile-link">Membership</RouterLink>
+
+          <RouterLink
+            @click="closeMenu"
+            to="/login"
+            class="rounded-full bg-stone-900 px-5 py-3 text-center text-sm font-semibold text-white"
+          >
+            Login
+          </RouterLink>
+        </template>
+
+        <!-- Member Mobile -->
+        <template v-else-if="currentUser.role === 'member'">
+          <RouterLink @click="closeMenu" to="/" class="mobile-link">Home</RouterLink>
+          <RouterLink @click="closeMenu" to="/classes" class="mobile-link">Classes</RouterLink>
+          <RouterLink @click="closeMenu" to="/booking-history" class="mobile-link">History</RouterLink>
+          <RouterLink @click="closeMenu" to="/dashboard" class="mobile-link">Dashboard</RouterLink>
+
+          <button
+            @click="logout"
+            class="rounded-full bg-red-100 px-5 py-3 text-sm font-semibold text-red-700"
+          >
+            Logout
+          </button>
+        </template>
+
+        <!-- Admin Mobile -->
+        <template v-else-if="currentUser.role === 'admin'">
+          <RouterLink @click="closeMenu" to="/admin" class="mobile-link">Admin Dashboard</RouterLink>
+          <RouterLink @click="closeMenu" to="/admin/classes" class="mobile-link">Manage Classes</RouterLink>
+          <RouterLink @click="closeMenu" to="/admin/instructors" class="mobile-link">Manage Instructors</RouterLink>
+          <RouterLink @click="closeMenu" to="/admin/bookings" class="mobile-link">Manage Bookings</RouterLink>
+
+          <button
+            @click="logout"
+            class="rounded-full bg-red-100 px-5 py-3 text-sm font-semibold text-red-700"
+          >
+            Logout
+          </button>
+        </template>
+      </div>
     </div>
   </nav>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const menuOpen = ref(false)
+const currentUser = ref(null)
+
+const loadUser = () => {
+  currentUser.value = JSON.parse(localStorage.getItem('glowUser'))
+}
+
+const closeMenu = () => {
+  menuOpen.value = false
+}
+
+const logout = () => {
+  localStorage.removeItem('glowUser')
+  currentUser.value = null
+  menuOpen.value = false
+  router.push('/')
+}
+
+onMounted(() => {
+  loadUser()
+})
+</script>
+
+<style scoped>
+.nav-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #57534e;
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: #0c0a09;
+}
+
+.mobile-link {
+  border-radius: 1rem;
+  background: #faf7f2;
+  padding: 0.9rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #44403c;
+}
+</style>

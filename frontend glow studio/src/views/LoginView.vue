@@ -5,7 +5,7 @@
     <section class="mx-auto flex min-h-screen max-w-7xl items-center px-6 pt-28 pb-16">
       <div class="mx-auto grid w-full max-w-5xl overflow-hidden rounded-[2.5rem] bg-white shadow-2xl lg:grid-cols-2">
         <div class="hidden bg-stone-900 p-10 text-white lg:block">
-          <p class="rounded-full bg-white/10 px-4 py-2 text-sm w-fit">Glow Member Access</p>
+          <p class="w-fit rounded-full bg-white/10 px-4 py-2 text-sm">Glow Member Access</p>
 
           <h1 class="mt-10 text-5xl font-bold leading-tight">
             Your wellness journey starts here.
@@ -86,6 +86,12 @@
           <div v-if="success" class="mt-6 rounded-2xl bg-green-100 p-4 text-sm font-semibold text-green-700">
             {{ success }}
           </div>
+
+          <div class="mt-6 rounded-2xl bg-[#FAF7F2] p-4 text-sm text-stone-600">
+            <p class="font-semibold text-stone-800">Demo Admin Login</p>
+            <p>Email: admin@glowstudio.com</p>
+            <p>Password: admin123</p>
+          </div>
         </div>
       </div>
     </section>
@@ -96,8 +102,11 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
+
+const router = useRouter()
 
 const isLogin = ref(true)
 const error = ref('')
@@ -123,9 +132,80 @@ const submitForm = () => {
     return
   }
 
-  success.value = isLogin.value
-    ? 'Login successful. Redirecting to dashboard...'
-    : 'Account created successfully.'
+  const email = form.value.email.toLowerCase()
+
+  if (isLogin.value) {
+    if (email === 'admin@glowstudio.com' && form.value.password === 'admin123') {
+      localStorage.setItem(
+        'glowUser',
+        JSON.stringify({
+          name: 'Glow Admin',
+          email,
+          role: 'admin',
+        }),
+      )
+
+      success.value = 'Admin login successful. Redirecting...'
+
+      setTimeout(() => {
+        router.push('/admin')
+      }, 800)
+
+      return
+    }
+
+    const savedUser = JSON.parse(localStorage.getItem('glowRegisteredUser'))
+
+    if (
+      savedUser &&
+      savedUser.email === email &&
+      savedUser.password === form.value.password
+    ) {
+      localStorage.setItem(
+        'glowUser',
+        JSON.stringify({
+          name: savedUser.name,
+          email: savedUser.email,
+          role: 'member',
+        }),
+      )
+
+      success.value = 'Login successful. Redirecting...'
+
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 800)
+
+      return
+    }
+
+    error.value = 'Invalid login details. Please register first or use admin login.'
+    return
+  }
+
+  localStorage.setItem(
+    'glowRegisteredUser',
+    JSON.stringify({
+      name: form.value.name,
+      email,
+      password: form.value.password,
+    }),
+  )
+
+  localStorage.setItem(
+    'glowUser',
+    JSON.stringify({
+      name: form.value.name,
+      email,
+      role: 'member',
+    }),
+  )
+
+  success.value = 'Account created successfully. Redirecting...'
+
+  setTimeout(() => {
+    router.push('/dashboard')
+  }, 800)
 }
 </script>
 

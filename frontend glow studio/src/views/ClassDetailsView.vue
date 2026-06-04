@@ -7,10 +7,27 @@
         ← Back to Classes
       </RouterLink>
 
-      <div v-if="classItem" class="grid gap-10 lg:grid-cols-2">
+      <div v-if="loading" class="rounded-3xl bg-white p-10 text-center shadow-sm">
+        <p class="text-stone-600">Loading class details...</p>
+      </div>
+
+      <div v-else-if="errorMessage" class="rounded-3xl bg-red-50 p-10 text-center shadow-sm">
+        <p class="font-semibold text-red-700">{{ errorMessage }}</p>
+      </div>
+
+      <div v-else-if="classItem" class="grid gap-10 lg:grid-cols-2">
         <div class="rounded-[2.5rem] bg-white p-6 shadow-xl">
-          <div class="flex h-[420px] items-center justify-center rounded-[2rem] bg-gradient-to-br from-[#F5EFE6] to-[#D9C5B2]/40">
-            <span class="text-9xl">{{ classItem.icon }}</span>
+          <div
+            class="flex h-[420px] items-center justify-center overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#F5EFE6] to-[#D9C5B2]/40"
+          >
+            <img
+              v-if="classItem.image_url"
+              :src="classItem.image_url"
+              :alt="classItem.name"
+              class="h-full w-full object-cover"
+            />
+
+            <span v-else class="text-9xl">{{ classItem.icon }}</span>
           </div>
         </div>
 
@@ -52,7 +69,7 @@
           <div class="mt-8 rounded-[2rem] bg-white p-6 shadow-sm">
             <h2 class="text-xl font-bold">Class Benefits</h2>
             <ul class="mt-4 space-y-3 text-stone-600">
-              <li v-for="benefit in classItem.benefits" :key="benefit">
+              <li v-for="benefit in benefits" :key="benefit">
                 ✨ {{ benefit }}
               </li>
             </ul>
@@ -76,62 +93,68 @@
     </section>
 
     <Footer />
-    <MobileBottomNav />
+   
   </main>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
 import Footer from '../components/Footer.vue'
-import MobileBottomNav from '../components/MobileBottomNav.vue'
 
 const route = useRoute()
 
-const classes = [
-  {
-    id: 1,
-    name: 'Slow Flow Pilates',
-    level: 'Beginner',
-    duration: '45 min',
-    price: 38,
-    slots: 4,
-    icon: '🌿',
-    instructor: 'Maya Collins',
-    description:
-      'A calm beginner-friendly session focused on breathing, posture, and slow movement.',
-    benefits: ['Improve posture', 'Reduce stress', 'Build body awareness'],
-  },
-  {
-    id: 2,
-    name: 'Core Sculpt',
-    level: 'Intermediate',
-    duration: '50 min',
-    price: 45,
-    slots: 2,
-    icon: '🔥',
-    instructor: 'Sofia Tan',
-    description:
-      'A powerful class designed to strengthen your core and improve body control.',
-    benefits: ['Strengthen core muscles', 'Improve balance', 'Increase endurance'],
-  },
-  {
-    id: 3,
-    name: 'Flex & Restore',
-    level: 'Beginner',
-    duration: '40 min',
-    price: 35,
-    slots: 8,
-    icon: '🧘🏻‍♀️',
-    instructor: 'Aina Rahman',
-    description:
-      'A restorative Pilates class focusing on flexibility, mobility, and stress relief.',
-    benefits: ['Increase flexibility', 'Relax tight muscles', 'Support recovery'],
-  },
-]
+const classItem = ref(null)
+const loading = ref(true)
+const errorMessage = ref('')
 
-const classItem = computed(() => {
-  return classes.find((item) => item.id === Number(route.params.id))
+const iconMap = {
+  'Slow Flow Pilates': '🌿',
+  'Core Sculpt': '🔥',
+  'Flex & Restore': '🧘🏻‍♀️',
+  'Power Reformer': '⚡',
+  'Morning Glow': '☀️',
+  'Zen Flow Pilates': '✨',
+}
+
+const benefitsMap = {
+  'Slow Flow Pilates': ['Improve posture', 'Reduce stress', 'Build body awareness'],
+  'Core Sculpt': ['Strengthen core muscles', 'Improve balance', 'Increase endurance'],
+  'Flex & Restore': ['Increase flexibility', 'Relax tight muscles', 'Support recovery'],
+  'Power Reformer': ['Build strength', 'Improve coordination', 'Boost endurance'],
+  'Morning Glow': ['Increase energy', 'Improve focus', 'Start the day mindfully'],
+  'Zen Flow Pilates': ['Calm the mind', 'Improve breathing', 'Support relaxation'],
+}
+
+onMounted(async () => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/classes/${route.params.id}`)
+
+    if (!response.ok) {
+      throw new Error('Class not found')
+    }
+
+    const data = await response.json()
+
+    classItem.value = {
+      ...data,
+      icon: iconMap[data.name] || '✨',
+    }
+  } catch (error) {
+    console.error(error)
+    errorMessage.value = 'Failed to load class details. Please make sure the backend is running.'
+  } finally {
+    loading.value = false
+  }
+})
+
+const benefits = computed(() => {
+  if (!classItem.value) return []
+  return benefitsMap[classItem.value.name] || [
+    'Improve movement control',
+    'Support body strength',
+    'Build wellness consistency',
+  ]
 })
 </script>
